@@ -13,10 +13,11 @@ import (
 // - 5:hello -> hello
 // - 10:hello12345 -> hello12345
 func decodeBencode(bencodedString string) (interface{}, error) {
+  n := len(bencodedString)
 	if unicode.IsDigit(rune(bencodedString[0])) {
 		var firstColonIndex int
 
-		for i := 0; i < len(bencodedString); i++ {
+		for i := 0; i < n; i++ {
 			if bencodedString[i] == ':' {
 				firstColonIndex = i
 				break
@@ -31,9 +32,11 @@ func decodeBencode(bencodedString string) (interface{}, error) {
 		}
 
 		return bencodedString[firstColonIndex+1 : firstColonIndex+1+length], nil
+	} else if bencodedString[0] == 'i' && bencodedString[n - 1] == 'e' {
+    return bencodedString[1 : n - 1], nil
 	} else {
-		return "", fmt.Errorf("Only strings are supported at the moment")
-	}
+    return "Not implemented", nil
+  }
 }
 
 func main() {

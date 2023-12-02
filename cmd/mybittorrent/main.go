@@ -38,6 +38,8 @@ func decode(bencodedString string, index int) (decodeResult, error) {
 		res, err = decodeInt(bencodedString, index)
 	} else if bencodedString[index] == 'l' {
 		res, err = decodeList(bencodedString, index)
+	} else if bencodedString[index] == 'd' {
+		res, err = decodeDict(bencodedString, index)
 	} else {
 		return decodeResult{}, errors.New("Input string needs to be in format of String, Int, Array, Dict. Found: " + string(bencodedString[index]))
 	}
@@ -49,7 +51,7 @@ func decode(bencodedString string, index int) (decodeResult, error) {
 	return res, nil
 }
 
-func decodeString(bencodedString string, index int) (decodeResult, error) {
+func decodeRawString(bencodedString string, index int) (string, int, error) {
 	var firstColonIndex int
 
 	for i := index; i < len(bencodedString); i++ {
@@ -63,12 +65,22 @@ func decodeString(bencodedString string, index int) (decodeResult, error) {
 
 	length, err := strconv.Atoi(lengthStr)
 	if err != nil {
-		return decodeResult{}, err
+		return "", 0, err
 	}
 
 	res := bencodedString[firstColonIndex+1 : firstColonIndex+1+length]
 
-	return decodeResult{res, firstColonIndex + length + 1}, nil
+	return res, firstColonIndex + length + 1, nil
+}
+
+func decodeString(bencodedString string, index int) (decodeResult, error) {
+	res, index, err := decodeRawString(bencodedString, index)
+
+	if err != nil {
+		return decodeResult{}, err
+	}
+
+	return decodeResult{res, index}, nil
 }
 
 func decodeInt(bencodedString string, index int) (decodeResult, error) {
@@ -107,6 +119,32 @@ func decodeList(bencodedString string, index int) (decodeResult, error) {
 	}
 
 	return decodeResult{list, index + 1}, nil
+}
+
+func decodeDict(bencodedString string, index int) (decodeResult, error) {
+	dict := make(map[string]interface{})
+	index += 1
+
+	for bencodedString[index] != 'e' {
+		key, i, err := decodeRawString(bencodedString, index)
+
+		if err != nil {
+			return decodeResult{}, err
+		}
+
+		index = i
+
+		val, err := decode(bencodedString, index)
+
+		if err != nil {
+			return decodeResult{}, err
+		}
+
+		dict[key] = val.result
+		index = val.index
+	}
+
+	return decodeResult{dict, index + 1}, nil
 }
 
 func main() {

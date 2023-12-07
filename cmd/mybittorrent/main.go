@@ -1,11 +1,12 @@
 package main
 
 import (
+	"crypto/sha1"
 	"encoding/json"
 	"fmt"
 	"os"
 
-	"github.com/codecrafters-io/bittorrent-starter-go/cmd/mybittorrent/decode"
+	"github.com/codecrafters-io/bittorrent-starter-go/cmd/mybittorrent/mybencode"
 	// bencode "github.com/jackpal/bencode-go" // Available if you need it!
 )
 
@@ -25,7 +26,7 @@ func main() {
 	if command == "decode" {
 		bencodedValue := os.Args[2]
 
-		decoded, err := decode.DecodeBencode(bencodedValue)
+		decoded, err := mybencode.DecodeBencode(bencodedValue)
 		if err != nil {
 			fmt.Println(err)
 			return
@@ -46,7 +47,7 @@ func main() {
 			return
 		}
 
-		decoded, err := decode.DecodeBencode(string(f))
+		decoded, err := mybencode.DecodeBencode(string(f))
 		if err != nil {
 			fmt.Println("Error decoding bencode:", err)
 			return
@@ -65,8 +66,25 @@ func main() {
 			return
 		}
 
+		infoDict := make(map[string]interface{})
+		for k, v := range jsonOutput {
+			println(k)
+			println(v)
+		}
+		encoded, err := mybencode.EncodeBencode(infoDict)
+
+		if err != nil {
+			fmt.Println("Error encoding:", err)
+			return
+		}
+
+		h := sha1.New()
+		h.Write([]byte(encoded))
+		bs := h.Sum(nil)
+
 		fmt.Println("Tracker URL:", output.Announce)
 		fmt.Println("Length:", output.Info.Length)
+		fmt.Println("Info Hash:", fmt.Sprintf("%x", bs))
 	} else {
 		fmt.Println("Unknown command: " + command)
 		os.Exit(1)

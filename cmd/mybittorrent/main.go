@@ -10,14 +10,16 @@ import (
 	// bencode "github.com/jackpal/bencode-go" // Available if you need it!
 )
 
+type TorrentFileInfo struct {
+	Length      int    `json:"length"`
+	Name        string `json:"name"`
+	PieceLength int    `json:"piece length"`
+	Pieces      string `json:"pieces"`
+}
+
 type TorrentFile struct {
-	Announce string `json:"announce"`
-	Info     struct {
-		Length      int    `json:"length"`
-		Name        string `json:"name"`
-		PieceLength int    `json:"piece length"`
-		Pieces      string `json:"pieces"`
-	}
+	Announce string          `json:"announce"`
+	Info     TorrentFileInfo `json:"info"`
 }
 
 func main() {
@@ -44,6 +46,7 @@ func main() {
 		f, err := os.ReadFile(file_path)
 
 		if err != nil {
+			fmt.Println("test")
 			return
 		}
 
@@ -53,28 +56,16 @@ func main() {
 			return
 		}
 
-		jsonOutput, err := json.Marshal(decoded)
-		if err != nil {
-			fmt.Println("Error marshalling to JSON:", err)
-			return
-		}
+		decodedMap := decoded.(map[string]interface{})
 
-		var output TorrentFile
-		err = json.Unmarshal([]byte(jsonOutput), &output)
-		if err != nil {
-			fmt.Println("Error unmarshalling from JSON:", err)
-			return
-		}
+		jsonString, _ := json.Marshal(decodedMap)
 
-		infoDict := make(map[string]interface{})
-		for k, v := range jsonOutput {
-			println(k)
-			println(v)
-		}
-		encoded, err := mybencode.EncodeBencode(infoDict)
+		var tf TorrentFile
+		json.Unmarshal(jsonString, &tf)
+
+		encoded, err := mybencode.Encode(decodedMap["info"])
 
 		if err != nil {
-			fmt.Println("Error encoding:", err)
 			return
 		}
 
@@ -82,9 +73,9 @@ func main() {
 		h.Write([]byte(encoded))
 		bs := h.Sum(nil)
 
-		fmt.Println("Tracker URL:", output.Announce)
-		fmt.Println("Length:", output.Info.Length)
-		fmt.Println("Info Hash:", fmt.Sprintf("%x", bs))
+		fmt.Printf("Tracker URL: %s\n", tf.Announce)
+		fmt.Printf("Length: %d\n", tf.Info.Length)
+		fmt.Printf("Info Hash: %x\n", bs)
 	} else {
 		fmt.Println("Unknown command: " + command)
 		os.Exit(1)

@@ -2,6 +2,7 @@ package mybencode
 
 import (
 	"fmt"
+	"sort"
 	"strconv"
 )
 
@@ -58,7 +59,14 @@ func EncodeList(in []interface{}) (string, error) {
 func EncodeDict(in map[string]interface{}) (string, error) {
 	res := "d"
 
-	for k, v := range in {
+	var sortedKeys []string = make([]string, 0)
+	for key := range in {
+		sortedKeys = append(sortedKeys, key)
+	}
+	sort.Strings(sortedKeys)
+
+	for _, k := range sortedKeys {
+		v := in[k]
 		ks, err := Encode(k)
 
 		if err != nil {
